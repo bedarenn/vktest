@@ -6,6 +6,12 @@
 # include <stdexcept>
 # include <cstdlib>
 # include <vector>
+# include <optional>
+
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	bool isComplete();
+};
 
 class	App {
 public:
@@ -52,5 +58,11 @@ private:
 	void	pickPhysicalDevice();
 	bool	isDeviceSuitable(VkPhysicalDevice device);
 	int		rateDeviceSuitability(VkPhysicalDevice device);
-	uint32_t	findQueueFamilies(VkPhysicalDevice device);
+
+	QueueFamilyIndices	findQueueFamilies(VkPhysicalDevice device);
+	bool	hasQueueFamilies(VkPhysicalDevice device);
+
+	VkDevice device;
+
+	void	createLogicalDevice();
 };

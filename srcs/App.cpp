@@ -3,6 +3,7 @@
 #include <map>
 
 #include <cstring>
+#include <iomanip>
 #include <curses.h>
 
 void	App::run() {
@@ -27,6 +28,7 @@ void	App::initVulkan() {
 	createInstance();
 	setupDebugMessenger();
 	pickPhysicalDevice();
+	createLogicalDevice();
 }
 
 void	App::createInstance() {
@@ -264,22 +266,106 @@ int	App::rateDeviceSuitability(VkPhysicalDevice device) {
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	int score = 0;
+	int	l_2D = deviceProperties.limits.maxImageDimension2D;
+	int	l_3D = deviceProperties.limits.maxImageDimension3D;
 
-	// Discrete GPUs have a significant performance advantage
-	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-		score += 1000;
-
-	// Maximum possible size of textures affects graphics quality
-	score += deviceProperties.limits.maxImageDimension2D;
+	bool	is_gpu = (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+					|| deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+					|| deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU);
 
 	// Application can't function without geometry shaders
-	if (!(deviceFeatures.geometryShader))
-		score = 0;
+	bool	have_shdrs = deviceFeatures.geometryShader;
+
+	int	score = (l_3D + (is_gpu * 1000)) * have_shdrs;
 
 	#ifndef NDEBUG
-	 std::cout << score << ": " << deviceProperties.deviceName << std::endl;
+	 std::cout << deviceProperties.deviceName << std::endl;
+	 std::cout << (is_gpu ? "GPU" : "CPU");
+	 std::cout << " 2D:" << l_2D << " 3D:" << l_3D;
+	 std::cout << "\t| " << (have_shdrs ? "✅​" : "❌​") << " geometryShader";
+	 std::cout << "\t| " << score << std::endl;
 	#endif
 
 	return (score);
+}
+/*
+	VK_QUEUE_GRAPHICS_BIT = 0x00000001,
+	VK_QUEUE_COMPUTE_BIT = 0x00000002,
+	VK_QUEUE_TRANSFER_BIT = 0x00000004,
+	VK_QUEUE_SPARSE_BINDING_BIT = 0x00000008,
+	VK_QUEUE_PROTECTED_BIT = 0x00000010,
+	VK_QUEUE_VIDEO_DECODE_BIT_KHR = 0x00000020,
+	VK_QUEUE_VIDEO_ENCODE_BIT_KHR = 0x00000040,
+	VK_QUEUE_OPTICAL_FLOW_BIT_NV = 0x00000100,
+*/
+QueueFamilyIndices	App::findQueueFamilies(VkPhysicalDevice device) {
+	QueueFamilyIndices indices;
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		std::cout << i << ": " << std::hex << queueFamily.queueFlags << std::dec << "\t" << COLOR_WR_FLAG;
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			indices.graphicsFamily = i;
+			std::cout << COLOR_R_FLAG << "VK_QUEUE_GRAPHICS_BIT " << COLOR_WR_FLAG;
+		}
+		if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			std::cout << "VK_QUEUE_COMPUTE_BIT ";
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			std::cout << "VK_QUEUE_TRANSFER_BIT ";
+		if (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
+			std::cout << "VK_QUEUE_SPARSE_BINDING_BIT ";
+		if (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT)
+			std::cout << "VK_QUEUE_PROTECTED_BIT ";
+		if (queueFamily.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR)
+			std::cout << "VK_QUEUE_VIDEO_DECODE_BIT_KHR ";
+		if (queueFamily.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR)
+			std::cout << "VK_QUEUE_VIDEO_ENCODE_BIT_KHR ";
+		if (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV)
+			std::cout << "VK_QUEUE_OPTICAL_FLOW_BIT_NV ";
+		i++;
+		std::cout << COLOR_STD << std::endl;
+	}
+	return (indices);
+}
+
+bool	App::hasQueueFamilies(VkPhysicalDevice device) {
+	QueueFamilyIndices indices = findQueueFamilies(device);
+
+	return (indices.isComplete());
+}
+
+bool	QueueFamilyIndices::isComplete() {
+	return (graphicsFamily.has_value());
+}
+
+void	App::createLogicalDevice() {
+	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+
+	float queuePriority = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+
+	createInfo.queueCreateInfoCount = 1;
+
+	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
 }

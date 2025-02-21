@@ -18,3 +18,6 @@ class	App;
 # define COLOR_WARNING "\033[33m"
 # define COLOR_ERROR "\033[31m"
 # define COLOR_STD "\033[0;0m"
+
+# define COLOR_R_FLAG "\033[32m"
+# define COLOR_WR_FLAG "\033[31m"
