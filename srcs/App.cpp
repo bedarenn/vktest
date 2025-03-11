@@ -85,14 +85,12 @@ void	App::createInstance() {
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
 	// Info print
-	#ifndef NDEBUG
-	 std::cout << "available extensions:\n";
-	 uint32_t	i;
-	 for (const VkExtensionProperties& extension : extensions) {
-	 	for (i = 0; i < createInfo.enabledExtensionCount && strcmp(createInfo.ppEnabledExtensionNames[i], extension.extensionName); i++) ;
-	 	std::cout << (i != createInfo.enabledExtensionCount ? "✅​" : "❌​") << '\t' << extension.extensionName << '\n';
-	 }
-	#endif
+	wout << "available extensions:\n";
+	uint32_t	i;
+	for (const VkExtensionProperties& extension : extensions) {
+		for (i = 0; i < createInfo.enabledExtensionCount && strcmp(createInfo.ppEnabledExtensionNames[i], extension.extensionName); i++) ;
+		wout << (i != createInfo.enabledExtensionCount ? "✅​" : "❌​") << '\t' << extension.extensionName << '\n';
+	}
 }
 
 static void	keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -168,19 +166,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL	App::debugCallback(
 	void* pUserData) {
 	switch (messageSeverity) {
 	case (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT):
-		std::cerr << COLOR_VERBOSE; break;
+		wout << COLOR_VERBOSE; break;
 	case (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT):
-		std::cerr << COLOR_INFO; break;
+		wout << COLOR_INFO; break;
 	case (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT):
-		std::cerr << COLOR_WARNING; break;
+		wout << COLOR_WARNING; break;
 	case (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT):
-		std::cerr << COLOR_ERROR; break;
+		wout << COLOR_ERROR; break;
 	case (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT):
-		std::cerr << COLOR_STD; break;
+		wout << COLOR_STD; break;
 	}
 	(void)messageType;
-	std::cerr << pCallbackData->pMessage << std::endl;
-	std::cerr << COLOR_STD;
+	wout << pCallbackData->pMessage << std::endl;
+	wout << COLOR_STD;
 	(void)pUserData;
 	return (VK_FALSE);
 }
@@ -243,11 +241,10 @@ void	App::pickPhysicalDevice() {
 	}
 
 	// Check if the best candidate is suitable at all
-	if (candidates.rbegin()->first > 0) {
+	if (candidates.rbegin()->first > 0)
 		physicalDevice = candidates.rbegin()->second;
-	} else {
+	else
 		throw std::runtime_error("failed to find a suitable GPU!");
-	}
 }
 
 bool	App::isDeviceSuitable(VkPhysicalDevice device) {
@@ -257,9 +254,7 @@ bool	App::isDeviceSuitable(VkPhysicalDevice device) {
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 	bool	suit = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
-	#ifndef NDEBUG
-	 std::cout << (suit ? "✅​" : "❌​") << deviceProperties.deviceName << std::endl;
-	#endif
+	wout << (suit ? "✅​" : "❌​") << deviceProperties.deviceName << std::endl;
 
 	return (suit);
 }
@@ -282,13 +277,11 @@ int	App::rateDeviceSuitability(VkPhysicalDevice device) {
 
 	int	score = (l_3D + (is_gpu * 1000)) * have_shdrs;
 
-	#ifndef NDEBUG
-	 std::cout << deviceProperties.deviceName << std::endl;
-	 std::cout << (is_gpu ? "GPU" : "CPU");
-	 std::cout << " 2D:" << l_2D << " 3D:" << l_3D;
-	 std::cout << "\t| " << (have_shdrs ? "✅​" : "❌​") << " geometryShader";
-	 std::cout << "\t| " << score << std::endl;
-	#endif
+	wout << deviceProperties.deviceName << std::endl;
+	wout << (is_gpu ? "GPU" : "CPU");
+	wout << " 2D:" << l_2D << " 3D:" << l_3D;
+	wout << "\t| " << (have_shdrs ? "✅​" : "❌​") << " geometryShader";
+	wout << "\t| " << score << std::endl;
 
 	return (score);
 }
@@ -312,27 +305,27 @@ QueueFamilyIndices	App::findQueueFamilies(VkPhysicalDevice device) {
 
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
-		std::cout << i << ": " << std::hex << queueFamily.queueFlags << std::dec << "\t" << COLOR_WR_FLAG;
+		wout << i << ": " << std::hex << queueFamily.queueFlags << std::dec << "\t" << COLOR_WR_FLAG;
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
-			std::cout << COLOR_R_FLAG << "VK_QUEUE_GRAPHICS_BIT " << COLOR_WR_FLAG;
+			wout << COLOR_R_FLAG << "VK_QUEUE_GRAPHICS_BIT " << COLOR_WR_FLAG;
 		}
 		if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-			std::cout << "VK_QUEUE_COMPUTE_BIT ";
+			wout << "VK_QUEUE_COMPUTE_BIT ";
 		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
-			std::cout << "VK_QUEUE_TRANSFER_BIT ";
+			wout << "VK_QUEUE_TRANSFER_BIT ";
 		if (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
-			std::cout << "VK_QUEUE_SPARSE_BINDING_BIT ";
+			wout << "VK_QUEUE_SPARSE_BINDING_BIT ";
 		if (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT)
-			std::cout << "VK_QUEUE_PROTECTED_BIT ";
+			wout << "VK_QUEUE_PROTECTED_BIT ";
 		if (queueFamily.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR)
-			std::cout << "VK_QUEUE_VIDEO_DECODE_BIT_KHR ";
+			wout << "VK_QUEUE_VIDEO_DECODE_BIT_KHR ";
 		if (queueFamily.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR)
-			std::cout << "VK_QUEUE_VIDEO_ENCODE_BIT_KHR ";
+			wout << "VK_QUEUE_VIDEO_ENCODE_BIT_KHR ";
 		if (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV)
-			std::cout << "VK_QUEUE_OPTICAL_FLOW_BIT_NV ";
+			wout << "VK_QUEUE_OPTICAL_FLOW_BIT_NV ";
 		i++;
-		std::cout << COLOR_STD << std::endl;
+		wout << COLOR_STD << std::endl;
 	}
 	return (indices);
 }

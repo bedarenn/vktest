@@ -16,7 +16,7 @@ DIR_LIBS := libs/
 
 #################################### FLAGS #####################################
 
-CFLAGS := -Wall -Wextra -std=c++20
+CFLAGS := -Wall -Wextra -std=c++20 -Werror
 IFLAGS := -I$(DIR_HDRS) -I$(DIR_WCL_)$(DIR_HDRS)
 LFLAGS := -L$(DIR_LIBS) -lvulkan -lglfw
 
@@ -52,6 +52,12 @@ all:	CFLAGS += -DNDEBUG=1
 all:	$(NAME)
 debug:	CFLAGS += -g
 debug:	$(NAME)
+
+run: all launch
+test: debug launch
+
+launch:
+	./$(NAME)
 
 #################################### PHONY #####################################
 .PHONY: all clean fclean re

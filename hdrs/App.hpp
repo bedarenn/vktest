@@ -31,8 +31,10 @@ private:
 	VkDebugUtilsMessengerEXT	debugMessenger;
 	#ifdef NDEBUG
 	 const bool enableValidationLayers = false;
+	 #define wout if (false) std::cerr
 	#else
 	 const bool enableValidationLayers = true;
+	 #define wout std::cerr
 	#endif
 
 	bool	checkValidationLayerSupport();
@@ -71,5 +73,4 @@ private:
 	VkSurfaceKHR surface;
 
 	void	createSurface();
-
 };
