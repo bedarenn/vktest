@@ -10,6 +10,7 @@
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 	bool isComplete();
 };
 
@@ -73,4 +74,6 @@ private:
 	VkSurfaceKHR surface;
 
 	void	createSurface();
+
+	VkQueue presentQueue;
 };
