@@ -27,6 +27,7 @@ void	App::initWindow() {
 void	App::initVulkan() {
 	createInstance();
 	setupDebugMessenger();
+	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
 }
@@ -108,8 +109,11 @@ void	App::mainLoop() {
 }
 
 void	App::cleanup() {
+	if (device)
+	vkDestroyDevice(device, nullptr);
 	if (enableValidationLayers)
-		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+	DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -368,4 +372,15 @@ void	App::createLogicalDevice() {
 	createInfo.pEnabledFeatures = &deviceFeatures;
 
 	createInfo.enabledExtensionCount = 0;
+
+	device = nullptr;
+	if (vkCreateDevice(physicalDevice,&createInfo, nullptr, &device) != VK_SUCCESS)
+		throw std::runtime_error("failed to create logical device!");
+
+	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+}
+
+void	App::createSurface() {
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+		throw std::runtime_error("failed to create window surface!");
 }

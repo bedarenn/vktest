@@ -65,4 +65,11 @@ private:
 	VkDevice device;
 
 	void	createLogicalDevice();
+
+	VkQueue graphicsQueue;
+
+	VkSurfaceKHR surface;
+
+	void	createSurface();
+
 };
