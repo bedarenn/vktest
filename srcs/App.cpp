@@ -254,10 +254,32 @@ bool	App::isDeviceSuitable(VkPhysicalDevice device) {
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	bool	suit = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+	// bool	suit = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+
+	QueueFamilyIndices indices = findQueueFamilies(device);
+
+	bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+	bool	suit = indices.isComplete() && extensionsSupported;
 	wout << (suit ? "✅​" : "❌​") << deviceProperties.deviceName << std::endl;
 
 	return (suit);
+}
+
+bool App::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+	for (const auto& extension : availableExtensions) {
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
 }
 
 int	App::rateDeviceSuitability(VkPhysicalDevice device) {
@@ -286,6 +308,7 @@ int	App::rateDeviceSuitability(VkPhysicalDevice device) {
 
 	return (score);
 }
+
 /*
 	VK_QUEUE_GRAPHICS_BIT = 0x00000001,
 	VK_QUEUE_COMPUTE_BIT = 0x00000002,
@@ -298,9 +321,9 @@ int	App::rateDeviceSuitability(VkPhysicalDevice device) {
 */
 QueueFamilyIndices	App::findQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
+
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
@@ -328,6 +351,7 @@ QueueFamilyIndices	App::findQueueFamilies(VkPhysicalDevice device) {
 		i++;
 		wout << COLOR_STD << std::endl;
 	}
+
 	i = 0;
 	VkBool32 presentSupport = false;
 	vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
@@ -335,6 +359,7 @@ QueueFamilyIndices	App::findQueueFamilies(VkPhysicalDevice device) {
 		indices.presentFamily = i;
 		wout << i << ": presentSupport" << std::endl;
 	}
+
 	return (indices);
 }
 
@@ -365,12 +390,12 @@ void	App::createLogicalDevice() {
 	}
 
 	VkPhysicalDeviceFeatures deviceFeatures{};
-
 	VkDeviceCreateInfo createInfo{};
 
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pEnabledFeatures = &deviceFeatures;
-	createInfo.enabledExtensionCount = 0;
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
